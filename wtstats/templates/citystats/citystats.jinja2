@@ -1,0 +1,10 @@
+{% extends 'templates/base.jinja2' %}
+
+{% block content %}
+	<div class="page-header">
+		<div class="pull-right">
+			{% include 'templates/common/stats.jinja2' %}
+		</div>
+		<h1>{{ city.name }}</h1>
+	</div>
+{% endblock %}

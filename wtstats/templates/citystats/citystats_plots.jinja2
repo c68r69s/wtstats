@@ -1,0 +1,37 @@
+{% extends 'templates/base.jinja2' %}
+
+{% block content %}
+	<div class="page-header">
+		<h1>
+			{{ city.name }}, {{ stat.longname }}
+			<small>{{ date.strftime('%d.%m.%Y') }}</small>
+		</h1>
+	</div>
+	
+	<div class="panel panel-default">
+		<div class="panel-heading"><h3 class="panel-title">Optionen</h3></div>
+		<div class="panel-body">
+			<div class="pull-left">
+				<div class="btn-group" role="group">
+					<a class="btn {% if date == date_saturday%}btn-primary{% else %}btn-default{% endif %}" href="{{ request.route_url('citystat_plots', city=city.name, stat=stat.name, date=date_saturday) }}" role="button">Samstag</a>
+					<a class="btn {% if date == date_sunday%}btn-primary{% else %}btn-default{% endif %}" href="{{ request.route_url('citystat_plots', city=city.name, stat=stat.name, date=date_sunday) }}" role="button">Sonntag</a>
+				</div>
+			</div>
+			<div class="pull-right">
+				{% include 'templates/common/stats.jinja2' %}
+			</div>
+		</div>
+	</div>
+	
+	<div class="panel panel-default">
+		<div class="panel-body text-center">
+			<img src="{{ request.route_url('citystat_plot_bar', city=city.name, date=date, stat=stat.name) }}" width="1000" height="800">
+		</div>
+	</div>
+	
+	<div class="panel panel-default">
+		<div class="panel-body text-center">
+			<img src="{{ request.route_url('citystat_plot_density', city=city.name, date=date, stat=stat.name) }}" width="1000" height="600">
+		</div>
+	</div>
+{% endblock %}

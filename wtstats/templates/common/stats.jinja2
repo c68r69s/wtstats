@@ -1,0 +1,11 @@
+<div class="btn-group" role="group">
+	{% for s in stats %}
+		{% set class = 'btn btn-default' %}
+		{% if stat is defined%}
+			{% if stat.name == s.name %}
+				{% set class = 'btn btn-primary' %}
+			{% endif %}
+		{% endif %}
+		<a class="{{ class }}" href="{{ request.route_url('citystat_plots', city=city.name, stat=s.name, date=date) }}" role="button">{{ s.name }}</a>
+	{% endfor %}
+</div>

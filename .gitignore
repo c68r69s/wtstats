@@ -1,0 +1,6 @@
+.project
+.pydevproject
+*.egg-info
+__pycache__
+wtstats.sqlite
+venv
