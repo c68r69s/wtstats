@@ -14,7 +14,7 @@ import pandas as pd
 import io
 import numpy as np
 import seaborn as sns
-import wtstats.wtcache as wtcache
+import pyramid_dogpile_cache as dp
 
 
 
@@ -70,30 +70,33 @@ class CityStatsView:
 			'date_sunday': date_sunday,
 		}
 	
+	
 	def plot_for_stat(self, plottype):
 		city_name = self.request.matchdict['city']
 		date_str = self.request.matchdict['date']
 		stat_name = self.request.matchdict['stat']
-		
-		stat = DBSession.query(ValueType).filter_by(name=stat_name).first()
+	
 		city = DBSession.query(City).filter_by(name=city_name).first()
-		date = parse_datestr(date_str)
-		
-		if not stat:
-			raise HTTPNotFound('Unknown stat')
-		
 		if not city:
 			raise HTTPNotFound('Unknown city')
 		
-		cache = wtcache.PlotCache()
-		#key = '{}.{}.{}.{}'.format(city_name, date_str, stat_name, plottype)
-		buf = cache.get_plot(city, date, stat, plottype) 
+		cache = dp.get_region('plots')
+		key = '{}.{}.{}.{}'.format(city_name, date_str, stat_name, plottype)
+		buf = cache.get(key, expiration_time=(datetime.datetime.utcnow() - city.last_fetch).total_seconds()) 
 		if buf:
 			return Response(
 				body_file = buf,
 				request = self.request,
 				content_type = 'image/png',
 			)
+			
+			
+		stat = DBSession.query(ValueType).filter_by(name=stat_name).first()
+		date = parse_datestr(date_str)
+		
+		if not stat:
+			raise HTTPNotFound('Unknown stat')
+		
 		
 		measurements = DBSession.query(Measurement).filter_by(city=city, date=date).all()
 		tips = DBSession.query(Tip).filter_by(city=city, date=date).all()
@@ -148,7 +151,7 @@ class CityStatsView:
 			buf = io.BytesIO()
 			fig.savefig(buf, format='png')
 			buf.seek(0)
-			cache.set_plot(city, date, stat, plottype, buf)
+			cache.set(key, buf)
 		finally:
 			plt.close(fig)
 		

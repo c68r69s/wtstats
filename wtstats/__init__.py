@@ -27,6 +27,7 @@ def main(global_config, **settings):
 		session_factory=session_factory,
 	)
 	config.include('pyramid_jinja2')
+	config.include('pyramid_dogpile_cache')
 	
 	config.add_route('home', '/')
 	config.add_route('citystat_plot_bar', '/stats/{date}/{city}/{stat}/bar')
