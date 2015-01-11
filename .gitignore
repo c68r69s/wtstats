@@ -4,3 +4,4 @@
 __pycache__
 wtstats.sqlite
 venv
+cache/*

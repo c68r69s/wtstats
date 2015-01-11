@@ -9,6 +9,7 @@ requires = [
 	'pyramid_debugtoolbar',
 	'pandas',
 	'seaborn',
+	'pyramid_dogpile_cache',
 ]
 
 setup(

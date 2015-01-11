@@ -40,7 +40,7 @@ def main(argv=sys.argv):
 		
 		DBSession.add(ValueType('N', 'Bedeckungsgrad', '1/8'))
 		DBSession.add(ValueType('Sd','Sonnenscheindauer', '%'))
-		DBSession.add(ValueType('dd','Windrichtung', '%'))
+		DBSession.add(ValueType('dd','Windrichtung', 'deg'))
 		DBSession.add(ValueType('ff', 'Windgeschwindigkeit', 'Knoten'))
 		DBSession.add(ValueType('fx', 'Böen', 'Knoten'))
 		DBSession.add(ValueType('Wv', 'Wetter Vormittag', ''))

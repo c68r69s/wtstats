@@ -14,6 +14,8 @@ import pandas as pd
 import io
 import numpy as np
 import seaborn as sns
+import wtstats.wtcache as wtcache
+
 
 
 def get_friday_before(date):
@@ -75,6 +77,7 @@ class CityStatsView:
 		
 		stat = DBSession.query(ValueType).filter_by(name=stat_name).first()
 		city = DBSession.query(City).filter_by(name=city_name).first()
+		date = parse_datestr(date_str)
 		
 		if not stat:
 			raise HTTPNotFound('Unknown stat')
@@ -82,7 +85,16 @@ class CityStatsView:
 		if not city:
 			raise HTTPNotFound('Unknown city')
 		
-		date = parse_datestr(date_str)
+		cache = wtcache.PlotCache()
+		#key = '{}.{}.{}.{}'.format(city_name, date_str, stat_name, plottype)
+		buf = cache.get_plot(city, date, stat, plottype) 
+		if buf:
+			return Response(
+				body_file = buf,
+				request = self.request,
+				content_type = 'image/png',
+			)
+		
 		measurements = DBSession.query(Measurement).filter_by(city=city, date=date).all()
 		tips = DBSession.query(Tip).filter_by(city=city, date=date).all()
 		
@@ -136,6 +148,7 @@ class CityStatsView:
 			buf = io.BytesIO()
 			fig.savefig(buf, format='png')
 			buf.seek(0)
+			cache.set_plot(city, date, stat, plottype, buf)
 		finally:
 			plt.close(fig)
 		
