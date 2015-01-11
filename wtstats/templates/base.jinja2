@@ -12,6 +12,31 @@
 		{% block headerScripts %}
 		{% endblock %}
 	</head>
+	
+	{% macro print_pagination(url_name, pages_total, page_current) %}
+		<ul class="pagination">
+			{% if page_current == 0 %}
+				<li class="disabled"><a href="#">&laquo;</a></li>
+			{% else  %}
+				<li class=""><a href="{{ request.route_url(url_name, _query={'page': page_current-1}) }}">&laquo;</a></li>
+			{% endif %}
+			
+			{% for page in range(0, pages_total) %}
+				{% if page == page_current %}
+					{% set linkclass = 'active' %}
+				{% else %}
+					{% set linkclass = '' %}
+				{% endif %}
+				<li class="{{ linkclass }}" ><a href="{{ request.route_url(url_name, _query={'page': page}) }}">{{ page+1 }}</a></li>
+			{% endfor %}
+			
+			{% if page_current == pages_total-1 %}
+				<li class="disabled"><a href="#">&raquo;</a></li>
+			{% else %}
+				<li class=""><a href="{{ request.route_url(url_name, _query={'page': page_current+1}) }}">&raquo;</a></li>
+			{% endif %}
+		</ul>
+	{% endmacro %}
 
 	<body>
 		<div class="navbar navbar-default navbar-fixed-top" role="navigation">
@@ -29,6 +54,11 @@
 							<li class="{{ li_class }}"><a href="{{ url }}">{{ city.name }}</a></li>
 						{% endfor %}
 					</ul>
+				</li>
+			</ul>
+			<ul class="nav navbar-nav">
+				<li class="dropdown">
+					<a href="{{ request.route_url('playerstats_list') }}" class="">Spieler</b></a>
 				</li>
 			</ul>
 			

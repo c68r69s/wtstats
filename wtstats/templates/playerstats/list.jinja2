@@ -1,0 +1,35 @@
+{% extends 'templates/base.jinja2' %}
+
+{% block content %}
+	<div class="page-header">
+		<h1>
+			Spieler
+			<small>(Gesamt: {{ players_totoal }})</small>
+		</h1>
+	</div>
+	
+	<table class="table table-striped">
+		<tr>
+			<th style="width: 200px">Name</th>
+			{% for city in cities %}
+				<th>Tips {{ city.name }}</th>
+			{% endfor %}
+			<th>Tips Gesamt</th>
+		</tr>
+		
+		{% for player in players %}
+		<tr>
+			<td><a href="{{ request.route_url('playerstats', name=player.name) }}">{{ player.name }}</a></td>
+			{% for city in cities %}
+				<td>{{ tips_for_city(player, city) }}</td>
+			{% endfor %}
+			<td>{{ player.tips|length }}</td>
+		</tr>
+		{% endfor %}
+	</table>
+	
+	<div class="text-center">
+		{{ print_pagination('playerstats_list', pages_total, page_current) }}
+	</div>
+	
+{% endblock %}

@@ -105,7 +105,8 @@ class CityStatsView:
 			raise HTTPNotFound('No data for given date')
 		
 		tip_ids = [x.id for x in tips]
-		players, values = zip(*DBSession.query(Player, TipValue).join(Tip, TipValue.tip).join(Player, Tip.player).filter(TipValue.valuetype == stat, Tip.id.in_(tip_ids)).order_by(func.lower(Player.name)).all())
+		players, values = zip(*DBSession.query(Player, TipValue).join(Tip, TipValue.tip).join(Player, Tip.player)
+							.filter(TipValue.valuetype == stat, Tip.id.in_(tip_ids)).order_by(func.lower(Player.name)).all())
 		values = np.array([x.value for x in values])
 		players =  [x.name for x in players]
 		
@@ -137,7 +138,7 @@ class CityStatsView:
 			if (plottype != 'kde'):
 				ax.set_ylabel(stat.unit)
 				offset = (maximum - minimum)*0.05
-				ax.set_ylim(minimum-offset, maximum+offset)
+				ax.set_ylim(minimum-offset, maximum+offset*4)
 			else:
 				ax.set_xlabel(stat.unit)
 				

@@ -6,6 +6,9 @@
 			{{ city.name }}, {{ stat.longname }}
 			<small>{{ date.strftime('%d.%m.%Y') }}</small>
 		</h1>
+		
+			
+		
 	</div>
 	
 	<div class="panel panel-default">
@@ -34,4 +37,6 @@
 			<img src="{{ request.route_url('citystat_plot_density', city=city.name, date=date, stat=stat.name) }}" width="1000" height="600">
 		</div>
 	</div>
+	
+	<small class="pull-right">last data import:: {{ city.last_fetch }} utc</small>
 {% endblock %}

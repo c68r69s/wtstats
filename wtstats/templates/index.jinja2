@@ -1,0 +1,22 @@
+{% extends 'templates/base.jinja2' %}
+
+{% block content %}
+	
+	<div class="page-header">
+		<h1>Städte</h1>
+	</div>
+	
+	<div class="row">
+		{% for city in cities %}
+			<div class="col-sm-6 col-md-4">
+				<div class="thumbnail">
+					
+					<a href="{{ request.route_url('citystat_plots', city=city.name, date='current', stat='TTm') }}">
+						<h3>{{ city.name }}</h3>
+						<img src="/static/images/cities/{{ city.name }}.jpeg">
+					</a>
+				</div>
+			</div>
+		{% endfor %}
+	</div>
+{% endblock %}

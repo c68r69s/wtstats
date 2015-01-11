@@ -1,0 +1,36 @@
+{% extends 'templates/base.jinja2' %}
+
+{% block content %}
+	<div class="page-header">
+		<h1>
+			{{ player.name }}
+		</h1>
+	</div>
+	
+	{% for city in cities %}
+		{% set stats_all = avg_points_per_stat_all[city.name] %}
+		{% set stats_player = avg_points_per_stat_player[city.name] %}
+	
+		{% if stats_player %}
+			<h3>{{ city.name }}</h3>
+			<table class="table table-striped">
+				<tr>
+					<th>Wert</th>
+					<th>Durchschnitt aller Spieler</th>
+					<th>Durchschnitt {{ player.name }}</th>
+					<th>Unterschied</th>
+				</tr>
+				{% for stat in stat_types %}
+					{% set diff = stats_player[stat.name] - stats_all[stat.name] %}
+					<tr class="">
+						<td>{{ stat.name }}</td>
+						<td>{{ stats_all[stat.name]|round(2) }}</td>
+						<td>{{ stats_player[stat.name]|round(2) }}</td>
+						<td class="{% if diff >= 0 %}above-avg{% else %}below-avg{% endif %}">{{ diff|round(2) }}</td>
+					</tr>
+				{% endfor %}
+			</table>
+			&nbsp;
+		{% endif %}
+	{% endfor %}
+{% endblock %}

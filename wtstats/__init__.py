@@ -34,6 +34,9 @@ def main(global_config, **settings):
 	config.add_route('citystat_plot_density', '/stats/{date}/{city}/{stat}/density')
 	config.add_route('citystat_plots', '/stats/{date}/{city}/{stat}')
 	
+	config.add_route('playerstats_list', '/players/list')
+	config.add_route('playerstats', '/player/{name}')
+	
 	config.add_static_view(name='static', path='wtstats:static')
 	config.scan()
 

@@ -8,7 +8,7 @@ class Fetcher:
 		pass
 	
 	def fetch_data(self, city):
-		if city.last_fetch:
+		if city.last_fetch and False:
 			time_passed = datetime.datetime.utcnow() - city.last_fetch
 			if time_passed.total_seconds() < 60*5:
 				print('TIME NOT PASSED')
@@ -43,6 +43,8 @@ class Fetcher:
 			valuetypes = DBSession.query(ValueType).all()
 			for valuetype in valuetypes:
 				value = values[valuetype.name]['value'] 
+				diff = values[valuetype.name]['diff']
+				points = values[valuetype.name]['points']
 				tv = tipvalues.get(valuetype.name, None)
 				if not tv:
 					tv = TipValue(valuetype, value, tip=tip)
@@ -50,6 +52,8 @@ class Fetcher:
 				else:
 					tv.value = value
 				
+				tv.diff = diff
+				tv.points = points
 				DBSession.add(tv)
 			
 			DBSession.add(tip)

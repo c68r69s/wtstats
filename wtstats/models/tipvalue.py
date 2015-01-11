@@ -16,6 +16,9 @@ class TipValue(Base):
 	measurement_id = Column(Integer, ForeignKey('measurements.id'), nullable=True)
 	valuetype_id = Column(Integer, ForeignKey('valuetypes.id'))
 	value = Column(Float, nullable=True)
+	
+	points = Column(Float)
+	diff = Column(Float)
 		
 	valuetype = relationship('ValueType')
 	tip = relationship('Tip', backref='values')

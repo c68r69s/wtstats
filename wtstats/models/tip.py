@@ -18,8 +18,8 @@ class Tip(Base):
 	city_id = Column(Integer, ForeignKey('cities.id'))
 	date = Column(Date)
 
-	player = relationship('Player', backref='Tips')
-	city = relationship('City', backref='Tips')
+	player = relationship('Player', backref='tips')
+	city = relationship('City', backref='tips')
 
 	def __init__(self):
 		pass
