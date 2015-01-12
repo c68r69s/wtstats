@@ -4,6 +4,8 @@ from pyramid.view import (
 )
 
 import math
+
+from pyramid.httpexceptions import HTTPNotFound
 from sqlalchemy import func
 from wtstats.models import DBSession, Player, City, Tip, ValueType, Measurement
 from wtstats.models.tipvalue import TipValue
@@ -40,6 +42,9 @@ class PlayerStats:
 	def player(self):
 		name = self.request.matchdict.get('name')
 		player = DBSession.query(Player).filter(Player.name == name).first()
+		
+		if not player:
+			raise HTTPNotFound('Player {} not found'.format(name))
 		
 		cities = DBSession.query(City).all()
 		stat_types = DBSession.query(ValueType).all()
