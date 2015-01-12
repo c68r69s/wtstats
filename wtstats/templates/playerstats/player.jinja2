@@ -16,17 +16,25 @@
 			<table class="table table-striped">
 				<tr>
 					<th>Wert</th>
-					<th>Durchschnitt aller Spieler</th>
-					<th>Durchschnitt {{ player.name }}</th>
-					<th>Unterschied</th>
+					<th>&oslash;Punkte aller Spieler</th>
+					<th>&oslash;Punkte {{ player.name }}</th>
+					<th>&Delta;Punkte</th>
+					<th>&oslash;Abweichung aller Spieler</th>
+					<th>&oslash;Abweichung {{ player.name }}</th>
+					<th>&Delta;Abweichung</th>
 				</tr>
 				{% for stat in stat_types %}
-					{% set diff = stats_player[stat.name] - stats_all[stat.name] %}
+					{% set diff_points = stats_player[stat.name]['points_avg'] - stats_all[stat.name]['points_avg'] %}
+					{% set diff_diff = stats_all[stat.name]['diff_avg'] - stats_player[stat.name]['diff_avg'] %}
 					<tr class="">
 						<td>{{ stat.name }}</td>
-						<td>{{ stats_all[stat.name]|round(2) }}</td>
-						<td>{{ stats_player[stat.name]|round(2) }}</td>
-						<td class="{% if diff >= 0 %}above-avg{% else %}below-avg{% endif %}">{{ diff|round(2) }}</td>
+						<td>{{ stats_all[stat.name]['points_avg']|round(2) }}</td>
+						<td>{{ stats_player[stat.name]['points_avg']|round(2) }}</td>
+						<td class="{% if diff_points >= 0 %}above-avg{% else %}below-avg{% endif %}">{{ diff_points|round(2) }}</td>
+						
+						<td>{{ stats_all[stat.name]['diff_avg']|round(2) }}</td>
+						<td>{{ stats_player[stat.name]['diff_avg']|round(2) }}</td>
+						<td class="{% if diff_diff >= 0 %}above-avg{% else %}below-avg{% endif %}">{{ diff_diff|round(2) }} {{ stat.unit }}</td>
 					</tr>
 				{% endfor %}
 			</table>
