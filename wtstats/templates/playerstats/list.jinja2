@@ -21,7 +21,7 @@
 		<tr>
 			<td><a href="{{ request.route_url('playerstats', name=player.name) }}">{{ player.name }}</a></td>
 			{% for city in cities %}
-				<td>{{ tips_for_city(player, city) }}</td>
+				<td>{{ player_data[player.id][city.id]|default(0) }}</td>
 			{% endfor %}
 			<td>{{ player.tips|length }}</td>
 		</tr>

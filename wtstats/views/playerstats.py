@@ -25,16 +25,34 @@ class PlayerStats:
 		players = players.offset(page * entries_per_page).limit(entries_per_page)
 		players_count = DBSession.query(Player).count()
 		
-		def tips_for_city(player, city):
-			return DBSession.query(Tip).filter(Tip.player_id == player.id, Tip.city_id == city.id).count()
+		player_ids = [p.id for p in players]
+		data = DBSession.query(Player.id, City.id, func.count(City.name))\
+		                             .join(Player, Tip.player)\
+		                             .filter(Player.id.in_(player_ids))\
+		                             .join(City, Tip.city)\
+		                             .group_by(Player.id, City.name)\
+		                             .order_by(func.lower(Player.name))\
+		                             .all()
+
+		player_data = {}
+		for d in data:
+			player_id = d[0]
+			city_id = d[1]
+			tip_count = d[2]
+			
+			tips = player_data.get(player_id, {})
+			tips[city_id] = tip_count
+			
+			player_data[player_id] = tips
+			
 		
 		return {
 			'page_current': page,
 			'players_totoal': players_count,
 			'players': players,
+			'player_data': player_data,
 			'pages_total': math.ceil(players_count / entries_per_page),
 			'cities': DBSession.query(City).order_by(City.name).all(),
-			'tips_for_city': tips_for_city,
 		}
 
 
