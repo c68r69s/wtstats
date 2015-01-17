@@ -4,20 +4,13 @@ from pyramid.view import (
 )
 
 from pyramid.httpexceptions import HTTPNotFound, HTTPClientError
-from pyramid.response import Response
 from wtstats.models import DBSession, City, Tip, Measurement, ValueType, TipValue, Player
 from sqlalchemy import func
+from scipy.stats import gaussian_kde
 
-import matplotlib.pyplot as plt
 import datetime
-import pandas as pd
-import io
-import numpy as np
-import seaborn as sns
-import pyramid_dogpile_cache as dp
-
 import json
-
+import numpy as np
 
 
 def get_friday_before(date):
@@ -51,6 +44,12 @@ class CityStatsView:
 		stat = DBSession.query(ValueType).filter_by(name = self.request.matchdict.get('stat', 'TTm')).first()
 		stats = DBSession.query(ValueType).all()
 		
+		if not city:
+			raise HTTPNotFound('Unknown city')
+		
+		if not stat:
+			raise HTTPNotFound('Unknown stat') 
+		
 		if (date.weekday() < 4):
 			date_weekend = get_friday_before(date)
 		else:
@@ -61,7 +60,6 @@ class CityStatsView:
 		
 		if date == date_weekend:
 			date = date_saturday
-		
 		
 		tips = DBSession.query(Player.name, TipValue.value)\
 		                       .join(Tip, TipValue.tip)\
@@ -76,8 +74,8 @@ class CityStatsView:
 		                        .join(City, Measurement.city)\
 		                        .filter(City.id == city.id, TipValue.valuetype_id == stat.id, Measurement.date == date, TipValue.value != None)\
 		                        .all()
+
 		_, tip_values = zip(*tips)
-		
 		
 		y_min = min(tip_values)
 		y_max = max(tip_values)
@@ -86,9 +84,10 @@ class CityStatsView:
 			y_min = min(y_min, min(measurements_values))
 			y_max = max(y_max, max(measurements_values))
 
-		colors = iter(['red', 'green'])
-		def color_gen():
-			return next(colors)
+		kde_func = gaussian_kde(tip_values)
+		offset = (y_max - y_min) * 0.1
+		kde_pos = np.arange(y_min-offset, y_max+offset, (y_max - y_min + 2*offset)/100.0)
+		kde_values = kde_func(kde_pos)
 
 		return {
 			'city': city,
@@ -103,5 +102,7 @@ class CityStatsView:
 			'to_json': json.dumps,
 			'y_min': y_min,
 			'y_max': y_max,
-			'line_colors': color_gen,
+			'kde_values': list(kde_values),
+			'kde_pos': list(kde_pos),
+			'kde_data': list(zip(kde_pos, kde_values)),
 		}

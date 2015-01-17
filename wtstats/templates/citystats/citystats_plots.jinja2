@@ -5,7 +5,7 @@
 	<script type="text/JavaScript">
 	
 		function init_charts() {
-			$('#container').highcharts({
+			$('#container-bar').highcharts({
 				chart: {
 				},
 				title: {
@@ -52,6 +52,49 @@
 					}
 				]
 			});
+			
+			
+			$('#container-kde').highcharts({
+				chart: {
+				},
+				title: {
+					text: '{{ stat.longname }}, KDE-Plot'
+				},
+				xAxis: {
+					type: 'linear',
+					plotLines : [
+						{% for measurement in measurements %}
+							{
+								value: {{ measurement.value }},
+								color : "{{ loop.cycle('green', 'black') }}",
+								dashStyle : 'solid',
+								width: 2,
+								label: '{{ measurement.station_name }}',
+								zIndex: 10,
+								label: {
+									{% set align = loop.cycle('top', 'bottom') %}
+									text: '{{ measurement.station_name }}',
+									verticalAlign : "{{ align }}",
+								}
+							},
+						{% endfor %}
+					],
+				},
+				yAxis: {
+					title: {
+						text: 'Dichte'
+					},
+				},
+				series: [{
+						type: 'line',
+						name: 'Verteilung',
+						data: {{ to_json(kde_data)|safe }},
+						marker: {
+							enabled: false
+						},
+					}
+				]
+			});
 		}
 		
 		$(document).ready(init_charts)
@@ -83,7 +126,13 @@
 	
 	<div class="panel panel-default">
 		<div class="panel-body text-center">
-			<div id="container" style="width:100%; height:650px;"></div>
+			<div id="container-bar" style="width:100%; height:650px;"></div>
+		</div>
+	</div>
+	
+	<div class="panel panel-default">
+		<div class="panel-body text-center">
+			<div id="container-kde" style="width:100%; height:650px;"></div>
 		</div>
 	</div>
 	
