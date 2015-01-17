@@ -16,6 +16,8 @@ import numpy as np
 import seaborn as sns
 import pyramid_dogpile_cache as dp
 
+import json
+
 
 
 def get_friday_before(date):
@@ -60,6 +62,34 @@ class CityStatsView:
 		if date == date_weekend:
 			date = date_saturday
 		
+		
+		tips = DBSession.query(Player.name, TipValue.value)\
+		                       .join(Tip, TipValue.tip)\
+		                       .join(City, Tip.city)\
+		                       .filter(City.id == city.id, TipValue.valuetype_id == stat.id, Tip.date == date)\
+		                       .join(Player, Tip.player)\
+		                       .order_by(func.lower(Player.name))\
+		                       .all()
+
+		measurements = DBSession.query(Measurement.station_name, TipValue.value)\
+		                        .join(Measurement, TipValue.measurement)\
+		                        .join(City, Measurement.city)\
+		                        .filter(City.id == city.id, TipValue.valuetype_id == stat.id, Measurement.date == date, TipValue.value != None)\
+		                        .all()
+		_, tip_values = zip(*tips)
+		
+		
+		y_min = min(tip_values)
+		y_max = max(tip_values)
+		if len(measurements):
+			_, measurements_values = zip(*measurements)
+			y_min = min(y_min, min(measurements_values))
+			y_max = max(y_max, max(measurements_values))
+
+		colors = iter(['red', 'green'])
+		def color_gen():
+			return next(colors)
+
 		return {
 			'city': city,
 			'stats': stats,
@@ -68,104 +98,10 @@ class CityStatsView:
 			'date_weekend': date_weekend,
 			'date_saturday': date_saturday,
 			'date_sunday': date_sunday,
+			'tips': tips,
+			'measurements': measurements,
+			'to_json': json.dumps,
+			'y_min': y_min,
+			'y_max': y_max,
+			'line_colors': color_gen,
 		}
-	
-	
-	def plot_for_stat(self, plottype):
-		city_name = self.request.matchdict['city']
-		date_str = self.request.matchdict['date']
-		stat_name = self.request.matchdict['stat']
-	
-		city = DBSession.query(City).filter_by(name=city_name).first()
-		if not city:
-			raise HTTPNotFound('Unknown city')
-		
-		cache = dp.get_region('plots')
-		key = '{}.{}.{}.{}'.format(city_name, date_str, stat_name, plottype)
-		buf = cache.get(key, expiration_time=(datetime.datetime.utcnow() - city.last_fetch).total_seconds()) 
-		if buf:
-			return Response(
-				body_file = buf,
-				request = self.request,
-				content_type = 'image/png',
-			)
-			
-			
-		stat = DBSession.query(ValueType).filter_by(name=stat_name).first()
-		date = parse_datestr(date_str)
-		
-		if not stat:
-			raise HTTPNotFound('Unknown stat')
-		
-		
-		measurements = DBSession.query(Measurement).filter_by(city=city, date=date).all()
-		tips = DBSession.query(Tip).filter_by(city=city, date=date).all()
-		
-		if len(tips) == 0:
-			raise HTTPNotFound('No data for given date')
-		
-		tip_ids = [x.id for x in tips]
-		players, values = zip(*DBSession.query(Player, TipValue).join(Tip, TipValue.tip).join(Player, Tip.player)
-							.filter(TipValue.valuetype == stat, Tip.id.in_(tip_ids)).order_by(func.lower(Player.name)).all())
-		values = np.array([x.value for x in values])
-		players =  [x.name for x in players]
-		
-		fig = plt.figure(frameon = False)
-		try:
-			ax = fig.add_subplot(111)
-	
-			frame = pd.DataFrame(values, index=players, columns=['Tips'])
-			frame.plot(kind=plottype, ax=ax, legend=False)
-			
-			pal = sns.color_palette("bright", len(measurements))
-			minimum = min(values)
-			maximum = max(values)
-			for measured in measurements:
-				station_name = measured.station_name
-				value = DBSession.query(TipValue).join(Measurement, TipValue.measurement).filter(TipValue.valuetype==stat, 
-																								TipValue.measurement_id == measured.id).first().value
-				col = pal.pop()
-				if value == None:
-					continue
-				
-				minimum = min(minimum, value)
-				maximum = max(maximum, value)
-				if (plottype == 'kde'):
-					ax.axvline(value, label=station_name, color=col, linestyle='dashed')
-				else:
-					ax.axhline(value, label=station_name, color=col, linestyle='dashed')
-	
-			if (plottype != 'kde'):
-				ax.set_ylabel(stat.unit)
-				offset = (maximum - minimum)*0.05
-				ax.set_ylim(minimum-offset, maximum+offset*4)
-			else:
-				ax.set_xlabel(stat.unit)
-				
-			ax.legend(loc='best')
-			ax.set_title('{} ({}, {}-plot)'.format(stat.longname, stat.name, plottype))
-			ax.yaxis.get_major_formatter().set_useOffset(0)
-			
-			fig.tight_layout()
-			fig.set_size_inches((10, 6 if plottype == 'kde' else 8))
-			
-			buf = io.BytesIO()
-			fig.savefig(buf, format='png')
-			buf.seek(0)
-			cache.set(key, buf)
-		finally:
-			plt.close(fig)
-		
-		return Response(
-			body_file = buf,
-			request = self.request,
-			content_type = 'image/png',
-		)
-		
-	@view_config(route_name='citystat_plot_density')
-	def densityplot_for_stat(self):
-		return self.plot_for_stat('kde')
-		
-	@view_config(route_name='citystat_plot_bar')
-	def barplot_for_stat(self):
-		return self.plot_for_stat('bar')
