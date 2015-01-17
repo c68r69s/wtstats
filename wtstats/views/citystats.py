@@ -84,10 +84,16 @@ class CityStatsView:
 			y_min = min(y_min, min(measurements_values))
 			y_max = max(y_max, max(measurements_values))
 
-		kde_func = gaussian_kde(tip_values)
+		
 		offset = (y_max - y_min) * 0.1
-		kde_pos = np.arange(y_min-offset, y_max+offset, (y_max - y_min + 2*offset)/100.0)
-		kde_values = kde_func(kde_pos)
+		kde_pos = []
+		kde_values = []
+		try:
+			kde_func = gaussian_kde(tip_values)
+			kde_pos = np.arange(y_min-offset, y_max+offset, (y_max - y_min + 2*offset)/100.0)
+			kde_values = kde_func(kde_pos)
+		except:
+			pass
 
 		return {
 			'city': city,
