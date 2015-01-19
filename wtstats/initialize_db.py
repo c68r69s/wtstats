@@ -49,6 +49,6 @@ def main(argv=sys.argv):
 		DBSession.add(ValueType('TTm', 'Max. Temperatur', 'deg. C'))
 		DBSession.add(ValueType('TTn', 'Min. Temperatur', 'deg. C'))
 		DBSession.add(ValueType('TTd', 'Taupunkttemperatur', 'deg. C'))
-		DBSession.add(ValueType('RR', 'Niederschlag', 'mm/h'))
+		DBSession.add(ValueType('RR', 'Niederschlag', 'l/m^2'))
 		
 		

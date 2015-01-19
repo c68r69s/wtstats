@@ -2,9 +2,120 @@
 
 {% block content %}
 	<div class="page-header">
-		<div class="pull-right">
-			{% include 'templates/common/stats.jinja2' %}
-		</div>
-		<h1>{{ city.name }}</h1>
+		<h1>
+			Überblick {{ city.name }}
+			<small>{{ date_friday.strftime('%d.%m.%Y') }}</small>
+			
+			<div class="pull-right">
+				<a href="{{ request.route_url('citystat_plots', city=city.name, date=date_saturday, stat='TTm') }}" class="btn btn-default">Plots</a>
+			</div>
+		</h1>
 	</div>
+	
+	
+	{% if measurements|length == 0 %}
+		<div class="alert alert-warning">
+			Noch keine Messwerte vorhanden.
+			<a href="{{ request.route_url('citystat_plots', city=city.name, date=date_saturday, stat='TTm') }}" class="alert-link">Zu den Tips</a>
+		</div>
+	{% else %}
+		<div class="panel panel-default">
+			<div class="panel-heading"><h3 class="panel-title">Messwerte</h3></div>
+			<table class="table">
+				<tr>
+					<th>&nbsp;</th>
+					{% for stat in stats %}
+						<th>
+							<a href="{{ request.route_url('citystat_plots', city=city.name, date=date_saturday, stat=stat.name) }}">
+								{{ stat.name }}{% if stat.unit %}<br>({{ stat.unit }}){% endif %}
+							</a>
+						</th>
+					{% endfor %}
+				</tr>
+				
+				<tr>
+					<th><a href="{{ request.route_url('citystat_plots', city=city.name, date=date_saturday, stat='TTm') }}">Samstag</a></th>
+					{% for stat in stats %}
+						<td>
+							{% for m in measurements[stat.name][date_saturday] %}
+								{{ m }}{% if not loop.last %} / {% endif %}
+							{% endfor %}
+						</td>
+					{% endfor %}
+				</tr>
+				<tr>
+					<th><a href="{{ request.route_url('citystat_plots', city=city.name, date=date_sunday, stat='TTm') }}">Sonntag</a></th>
+					{% for stat in stats %}
+						<td>
+							{% for m in measurements[stat.name][date_sunday] %}
+								{{ m }}{% if not loop.last %} / {% endif %}
+							{% endfor %}
+						</td>
+					{% endfor %}
+				</tr> 
+				
+			</table>
+		</div>
+		
+		&nbsp;
+		
+		<div class="panel panel-info">
+			<div class="panel-heading">
+				<h3 class="panel-title">Höchste Punkte</h3>
+			</div>
+			<div class="panel-body">
+				<strong>Samstag: {{ top_players.saturday.player }}</strong> mit {{ top_players.saturday.points }} Punkten.<br>
+				<strong>Sonntag: {{ top_players.sunday.player }}</strong> mit {{ top_players.sunday.points }} Punkten.<br>
+				<strong>Wochenende: {{ top_players.weekend.player }}</strong> mit {{ top_players.weekend.points }} Punkten. 
+			</div>
+		</div>
+		
+		&nbsp;
+		
+		<h2>Beste Tips <small>(Weniger als 5 Spieler auf Platz 1)</small></h2>
+		<div class="row">
+			{% for day_stats in leaders_per_stat %}
+				<div class="col-sm-6 col-md-6">
+					<h3>
+						<a href="{{ request.route_url('citystat_plots', city=city.name, date=day_stats.date, stat='TTm') }}">
+							{{ day_stats.date.strftime('%d.%m.%Y') }}
+						</a>
+					</h3>
+					<div class="panel-body">
+						{% for stat in day_stats.stats %}
+							{% if stat.players|length < 5 %}
+								{% if stat.players|length == 1 %}
+									{% set panel_class = 'panel-success' %}
+								{% else %}
+									{% set panel_class = 'panel-default' %}
+								{% endif %}
+								<div class="panel {{ panel_class }}">
+									<div class="panel-heading">
+										<a href="{{ request.route_url('citystat_plots', city=city.name, date=day_stats.date, stat=stat.type.name) }}">
+											{{ stat.type.longname }} ({{ stat.type.name }})
+										</a>
+										<div class="pull-right">
+											{{ 'Punkte &oslash;/Spieler: {:.1f} / {:.1f}'.format(stat.avg_points, stat.points)|safe }}
+										</div>
+									</div>
+									
+									<table class="table">
+										{% for player in stat.players %}
+										<tr>
+											<td>
+												<a href="{{ request.route_url('playerstats', name=player.name) }}">
+													{{ player.name }}
+												</a>
+											</td>
+										</tr>
+										{% endfor %}
+									</table>
+								</div>
+							{% endif %}
+						{% endfor %}
+					</div>
+				</div>
+			{% endfor %}
+		</div>
+	{% endif %}
 {% endblock %}

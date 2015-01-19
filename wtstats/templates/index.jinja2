@@ -10,8 +10,7 @@
 		{% for city in cities %}
 			<div class="col-sm-6 col-md-4">
 				<div class="thumbnail">
-					
-					<a href="{{ request.route_url('citystat_plots', city=city.name, date='current', stat='TTm') }}">
+					<a href="{{ request.route_url('citystat_overview', city=city.name, date='current') }}">
 						<h3>{{ city.name }}</h3>
 						<img src="/static/images/cities/{{ city.name }}.jpeg">
 					</a>

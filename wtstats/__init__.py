@@ -30,6 +30,7 @@ def main(global_config, **settings):
 	config.include('pyramid_dogpile_cache')
 	
 	config.add_route('home', '/')
+	config.add_route('citystat_overview', '/stats/{date}/{city}')
 	config.add_route('citystat_plots', '/stats/{date}/{city}/{stat}')
 	
 	config.add_route('playerstats_list', '/players/list')
