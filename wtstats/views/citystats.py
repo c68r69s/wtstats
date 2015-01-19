@@ -7,6 +7,7 @@ from pyramid.httpexceptions import HTTPNotFound, HTTPClientError
 from wtstats.models import DBSession, City, Tip, Measurement, ValueType, TipValue, Player
 from sqlalchemy import func, or_
 from scipy.stats import gaussian_kde
+from pyramid_dogpile_cache import get_region
 
 import datetime
 import json
@@ -31,7 +32,6 @@ def parse_datestr(date_str):
 			return datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
 		except:
 			raise HTTPClientError('Invalid date')
-
 
 def get_weekend(date):
 	if (date.weekday() < 4):
@@ -59,6 +59,14 @@ class CityStatsView:
 		date = parse_datestr(self.request.matchdict.get('date', 'current'))
 		city = self._city_from_matchdict()
 		stat = DBSession.query(ValueType).filter_by(name = self.request.matchdict.get('stat', 'TTm')).first()
+		
+		cache_key = 'citystat_plots-{}.{}.{}'.format(city.name, date, stat)
+		cache = get_region('views')
+		cached_value = cache.get(cache_key, expiration_time=(datetime.datetime.utcnow() - city.last_fetch).total_seconds())
+		if cached_value:
+			return cached_value
+		
+		
 		stats = DBSession.query(ValueType).all()
 
 		
@@ -107,7 +115,7 @@ class CityStatsView:
 		except:
 			pass
 
-		return {
+		result = {
 			'city': city,
 			'stats': stats,
 			'stat': stat,
@@ -125,12 +133,21 @@ class CityStatsView:
 			'kde_data': list(zip(kde_pos, kde_values)),
 		}
 		
+		cache.set(cache_key, result)
+		return result
+		
 	
 	@view_config(route_name='citystat_overview', renderer='templates/citystats/citystats.jinja2')
 	def citystats_overview(self):
 		date = parse_datestr(self.request.matchdict.get('date', 'current'))
 		city = self._city_from_matchdict()
 		friday, saturday, sunday = get_weekend(date)
+		
+		cache_key = 'citystats_overview-{}.{}'.format(city.name, date)
+		cache = get_region('views')
+		cached_value = cache.get(cache_key, expiration_time=(datetime.datetime.utcnow() - city.last_fetch).total_seconds())
+		if cached_value:
+			return cached_value
 		
 		stats = DBSession.query(ValueType).all()
 		sq_tips = DBSession.query(Player.name, Tip.date, ValueType.name, TipValue.value, TipValue.diff, TipValue.points)\
@@ -237,9 +254,9 @@ class CityStatsView:
 				'player': top_player_weekend,
 				'points': tips_sums.loc[top_player_weekend].points,
 			}
-		}
+		} 
 		
-		return {
+		result = {
 			'stats': stats,
 			'measurements': measured_dict,
 			'city': city,
@@ -250,3 +267,6 @@ class CityStatsView:
 			'top_players': top_players,
 		}
 		
+		cache.set(cache_key, result)
+		
+		return result
