@@ -157,6 +157,9 @@ class CityStatsView:
 		                   .filter(Tip.city_id == city.id, or_(Tip.date == saturday, Tip.date == sunday))\
 		                   .all()
 	
+		if len(sq_tips) == 0:
+			raise HTTPNotFound('No tips for given date')
+	
 		players, dates, types, values, diffs, points = zip(*sq_tips)
 		tips = pd.DataFrame({
 			'player': players,
@@ -166,6 +169,8 @@ class CityStatsView:
 			'difference': diffs,
 			'points': points,
 		})
+		
+		tips['points'] = points
 		
 		leaders = []
 		for date in [saturday, sunday]:
@@ -237,24 +242,30 @@ class CityStatsView:
 		
 		tips_sums = tips.groupby(['player']).sum()	
 		tips_days_sums = tips.groupby(['player', 'date']).sum()
-		top_player_saturday = tips_days_sums.xs(saturday, level='date').points.idxmax()
-		top_player_sunday = tips_days_sums.xs(sunday, level='date').points.idxmax()
-		top_player_weekend = tips_sums.points.idxmax()
 		
-		top_players = {
-			'saturday': {
-				'player': top_player_saturday,
-				'points': tips_days_sums.loc[top_player_saturday, saturday].points,
-			},
-			'sunday': {
-				'player': top_player_sunday,
-				'points': tips_days_sums.loc[top_player_sunday, sunday].points,
-			},
-			'weekend': {
-				'player': top_player_weekend,
-				'points': tips_sums.loc[top_player_weekend].points,
-			}
-		} 
+		top_player_saturday = None
+		top_player_sunday = None
+		top_player_weekend = None
+		top_players = {}
+		if hasattr(tips_days_sums, 'points'):
+			top_player_saturday = tips_days_sums.xs(saturday, level='date').points.idxmax()
+			top_player_sunday = tips_days_sums.xs(sunday, level='date').points.idxmax()
+			top_player_weekend = tips_sums.points.idxmax()
+		
+			top_players = {
+				'saturday': {
+					'player': top_player_saturday,
+					'points': tips_days_sums.loc[top_player_saturday, saturday].points,
+				},
+				'sunday': {
+					'player': top_player_sunday,
+					'points': tips_days_sums.loc[top_player_sunday, sunday].points,
+				},
+				'weekend': {
+					'player': top_player_weekend,
+					'points': tips_sums.loc[top_player_weekend].points,
+				}
+			} 
 		
 		result = {
 			'stats': stats,
