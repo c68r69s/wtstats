@@ -59,16 +59,18 @@
 		
 		&nbsp;
 		
-		<div class="panel panel-info">
-			<div class="panel-heading">
-				<h3 class="panel-title">Höchste Punkte</h3>
+		{% if top_players.saturday  and top_players.sunday %}
+			<div class="panel panel-info">
+				<div class="panel-heading">
+					<h3 class="panel-title">Höchste Punkte</h3>
+				</div>
+				<div class="panel-body">
+					<strong>Samstag: {{ top_players.saturday.player }}</strong> mit {{ top_players.saturday.points }} Punkten.<br>
+					<strong>Sonntag: {{ top_players.sunday.player }}</strong> mit {{ top_players.sunday.points }} Punkten.<br>
+					<strong>Wochenende: {{ top_players.weekend.player }}</strong> mit {{ top_players.weekend.points }} Punkten. 
+				</div>
 			</div>
-			<div class="panel-body">
-				<strong>Samstag: {{ top_players.saturday.player }}</strong> mit {{ top_players.saturday.points }} Punkten.<br>
-				<strong>Sonntag: {{ top_players.sunday.player }}</strong> mit {{ top_players.sunday.points }} Punkten.<br>
-				<strong>Wochenende: {{ top_players.weekend.player }}</strong> mit {{ top_players.weekend.points }} Punkten. 
-			</div>
-		</div>
+		{% endif %}
 		
 		&nbsp;
 		

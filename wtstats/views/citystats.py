@@ -146,8 +146,8 @@ class CityStatsView:
 		cache_key = 'citystats_overview-{}.{}'.format(city.name, date)
 		cache = get_region('views')
 		cached_value = cache.get(cache_key, expiration_time=(datetime.datetime.utcnow() - city.last_fetch).total_seconds())
-		if cached_value:
-			return cached_value
+		#if cached_value:
+		#	return cached_value
 		
 		stats = DBSession.query(ValueType).all()
 		sq_tips = DBSession.query(Player.name, Tip.date, ValueType.name, TipValue.value, TipValue.diff, TipValue.points)\
@@ -167,10 +167,10 @@ class CityStatsView:
 			'type': types,
 			'value': values,
 			'difference': diffs,
-			'points': points,
+			'points': pd.Series(points, dtype=np.float),
 		})
 		
-		tips['points'] = points
+		tips.points.fillna(0, inplace=True)
 		
 		leaders = []
 		for date in [saturday, sunday]:
@@ -265,8 +265,8 @@ class CityStatsView:
 					'player': top_player_weekend,
 					'points': tips_sums.loc[top_player_weekend].points,
 				}
-			} 
-		
+			}
+	
 		result = {
 			'stats': stats,
 			'measurements': measured_dict,
