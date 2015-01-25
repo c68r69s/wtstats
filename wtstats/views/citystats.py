@@ -8,6 +8,7 @@ from wtstats.models import DBSession, City, Tip, Measurement, ValueType, TipValu
 from sqlalchemy import func, or_
 from scipy.stats import gaussian_kde
 from pyramid_dogpile_cache import get_region
+from functools import wraps
 
 import datetime
 import json
@@ -33,6 +34,8 @@ def parse_datestr(date_str):
 		except:
 			raise HTTPClientError('Invalid date')
 
+
+
 def get_weekend(date):
 	if (date.weekday() < 4):
 		date_weekend = get_friday_before(date)
@@ -40,7 +43,28 @@ def get_weekend(date):
 		date_weekend = date - datetime.timedelta(days=date.weekday() - 4)
 		
 	return date_weekend, date_weekend + datetime.timedelta(days=1), date_weekend + datetime.timedelta(days=2) 
-	
+
+
+
+def city_cache(fun):
+	@wraps(fun)
+	def wrapper(self, *args, **kwargs):
+		city = self._city_from_matchdict()
+		cache_key = '{}.city_cache-'.format(str(fun))
+		for key in self.request.matchdict:
+			cache_key += '.{}={}'.format(key, self.request.matchdict[key])
+		
+		cache = get_region('views')
+		cached_value = cache.get(cache_key, expiration_time=(datetime.datetime.utcnow() - city.last_fetch).total_seconds())
+		if cached_value:
+			return cached_value
+		
+		result = fun(self, *args, **kwargs)
+		cache.set(cache_key, result)
+		return result
+
+	return wrapper
+
 @view_defaults(renderer='templates/base.jinja2', permission='view')
 class CityStatsView:
 	def __init__(self, request):
@@ -54,22 +78,14 @@ class CityStatsView:
 		
 		return city
 
+	@city_cache
 	@view_config(route_name='citystat_plots', renderer="templates/citystats/citystats_plots.jinja2")
 	def citystat_plots(self):
 		date = parse_datestr(self.request.matchdict.get('date', 'current'))
 		city = self._city_from_matchdict()
 		stat = DBSession.query(ValueType).filter_by(name = self.request.matchdict.get('stat', 'TTm')).first()
-		
-		cache_key = 'citystat_plots-{}.{}.{}'.format(city.name, date, stat)
-		cache = get_region('views')
-		cached_value = cache.get(cache_key, expiration_time=(datetime.datetime.utcnow() - city.last_fetch).total_seconds())
-		if cached_value:
-			return cached_value
-		
-		
 		stats = DBSession.query(ValueType).all()
 
-		
 		if not stat:
 			raise HTTPNotFound('Unknown stat') 
 		
@@ -133,21 +149,16 @@ class CityStatsView:
 			'kde_data': list(zip(kde_pos, kde_values)),
 		}
 		
-		cache.set(cache_key, result)
 		return result
 		
 	
+	
+	@city_cache
 	@view_config(route_name='citystat_overview', renderer='templates/citystats/citystats.jinja2')
 	def citystats_overview(self):
 		date = parse_datestr(self.request.matchdict.get('date', 'current'))
 		city = self._city_from_matchdict()
 		friday, saturday, sunday = get_weekend(date)
-		
-		cache_key = 'citystats_overview-{}.{}'.format(city.name, date)
-		cache = get_region('views')
-		cached_value = cache.get(cache_key, expiration_time=(datetime.datetime.utcnow() - city.last_fetch).total_seconds())
-		if cached_value:
-			return cached_value
 		
 		stats = DBSession.query(ValueType).all()
 		sq_tips = DBSession.query(Player.name, Tip.date, ValueType.name, TipValue.value, TipValue.diff, TipValue.points)\
@@ -277,7 +288,5 @@ class CityStatsView:
 			'leaders_per_stat': leaders,
 			'top_players': top_players,
 		}
-		
-		cache.set(cache_key, result)
 		
 		return result
