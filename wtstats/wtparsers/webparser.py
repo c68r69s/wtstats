@@ -59,6 +59,9 @@ def fetch_data(url):
 			continue
 
 		header = match_header.search(tip)
+		if not header:
+			continue
+
 		date = datetime.datetime.strptime(header.group(1), '%d.%m.%Y').date()
 		player = header.group(2)
 
