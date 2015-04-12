@@ -1,39 +1,90 @@
 {% extends 'templates/base.jinja2' %}
 
+{% block headerScripts %}
+	<script type="text/JavaScript" src="/static/common/js/typeahead.bundle.js"></script>
+	<script type="text/JavaScript">
+		var timer_find_players = null;
+		function find_player_names(query, cb) {
+			$.ajax({
+				dataType: "json",
+				url: '{{ request.route_url("player_get_names") }}?name=' + query,
+				success: function(result) {
+					cb(result['players']);
+				}
+			});
+		}
+		
+		$(document).ready(function () {
+			$("#player_cmp_search").typeahead(
+				{
+					minLength: 2,
+					highlight: true,
+				}, [{
+					displayKey: 'name',
+					source: function(query, cb) {
+						if (timer_find_players)
+							window.clearTimeout(timer_find_players);
+						
+						timer_find_players = window.setTimeout(function() { find_player_names(query, cb); }, 250);
+					}
+				}]
+			);
+		});
+		
+	</script>
+{% endblock %}
+
 {% block content %}
-	<div class="page-header">
-		<h1>
-			{{ player.name }}
-		</h1>
+	{% include 'templates/common/messages.jinja2' %}
+
+	{% if player2 %}
+		{% set player2_name = player2.name %}
+	{% else %}
+		{% set player2_name = 'alle Spieler' %}
+	{% endif %}
+	<div class="page-header clearfix">
+			<h1>
+				{{ player1.name }} vs {{ player2_name }}
+				
+				<small>
+					<form class="form-inline pull-right">
+						<div class="form-group">
+							<input autocomplete="off" class="form-control" type="text" id="player_cmp_search" placeholder="compare to player" name="compare_to">
+						</div>
+					<button type="submit" class="btn btn-primary">Ok</button>
+					</form>
+				</small>
+			</h1>
+			
 	</div>
 	
 	{% for city in cities %}
-		{% set stats_all = avg_points_per_stat_all[city.name] %}
-		{% set stats_player = avg_points_per_stat_player[city.name] %}
+		{% set stats_p2 = avg_points_per_stat_p2[city.name] %}
+		{% set stats_p1 = avg_points_per_stat_p1[city.name] %}
 	
-		{% if stats_player %}
-			<h3>{{ city.name }}</h3>
+		{% if stats_p1 and stats_p2 %}
+			<h3>{{ city.name }} <small> {{ player1.name }}: {{ stats_p1.tip_count }} Tips,  {{ player2_name }}: {{ stats_p2.tip_count }} Tips</small></h3>
 			<table class="table table-striped">
 				<tr>
 					<th>Wert</th>
-					<th>&oslash;Punkte aller Spieler</th>
-					<th>&oslash;Punkte {{ player.name }}</th>
+					<th>&oslash;Punkte {{ player2_name }}</th>
+					<th>&oslash;Punkte {{ player1.name }}</th>
 					<th>&Delta;Punkte</th>
-					<th>&oslash;Abweichung aller Spieler</th>
-					<th>&oslash;Abweichung {{ player.name }}</th>
+					<th>&oslash;Abweichung {{ player2_name }}</th>
+					<th>&oslash;Abweichung {{ player1.name }}</th>
 					<th>&Delta;Abweichung</th>
 				</tr>
 				{% for stat in stat_types %}
-					{% set diff_points = stats_player[stat.name]['points_avg'] - stats_all[stat.name]['points_avg'] %}
-					{% set diff_diff = stats_all[stat.name]['diff_avg'] - stats_player[stat.name]['diff_avg'] %}
+					{% set diff_points = stats_p1[stat.name]['points_avg'] - stats_p2[stat.name]['points_avg'] %}
+					{% set diff_diff = stats_p2[stat.name]['diff_avg'] - stats_p1[stat.name]['diff_avg'] %}
 					<tr class="">
 						<td>{{ stat.name }}</td>
-						<td>{{ stats_all[stat.name]['points_avg']|round(2) }}</td>
-						<td>{{ stats_player[stat.name]['points_avg']|round(2) }}</td>
+						<td>{{ stats_p2[stat.name]['points_avg']|round(2) }}</td>
+						<td>{{ stats_p1[stat.name]['points_avg']|round(2) }}</td>
 						<td class="{% if diff_points >= 0 %}above-avg{% else %}below-avg{% endif %}">{{ diff_points|round(2) }}</td>
 						
-						<td>{{ stats_all[stat.name]['diff_avg']|round(2) }}</td>
-						<td>{{ stats_player[stat.name]['diff_avg']|round(2) }}</td>
+						<td>{{ stats_p2[stat.name]['diff_avg']|round(2) }}</td>
+						<td>{{ stats_p1[stat.name]['diff_avg']|round(2) }}</td>
 						<td class="{% if diff_diff >= 0 %}above-avg{% else %}below-avg{% endif %}">{{ diff_diff|round(2) }} {{ stat.unit }}</td>
 					</tr>
 				{% endfor %}

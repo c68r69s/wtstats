@@ -35,6 +35,7 @@ def main(global_config, **settings):
 	
 	config.add_route('playerstats_list', '/players/list')
 	config.add_route('playerstats', '/player/{name}')
+	config.add_route('player_get_names', '/players/names')
 	
 	config.add_static_view(name='static', path='wtstats:static')
 	config.scan()
